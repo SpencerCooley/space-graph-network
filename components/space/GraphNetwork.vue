@@ -47,7 +47,6 @@ export default {
   },
   computed: {
     nodeList() {
-      console.log('stuff');
       if (this.map) {
         return Object.values(this.map);
       }
@@ -76,6 +75,44 @@ export default {
     }
   },
   methods: {
+    getPosition (coords, dom) {
+        const bbox = dom.getBoundingClientRect();
+
+        return {
+          x: coords.x - bbox.left,
+          y: coords.y - bbox.top,
+        };
+    },
+    focusNode(renderer, nodeCoordinates, container) {
+      console.log("the passed parameters");
+      console.log(renderer);
+      console.log(nodeCoordinates);
+      console.log(container);
+      const DOUBLE_CLICK_ZOOMING_RATIO = .2;
+      const DOUBLE_CLICK_ZOOMING_DURATION = 200;
+      // default behavior
+      const camera = renderer.getCamera();
+      const newRatio = camera.getBoundedRatio(DOUBLE_CLICK_ZOOMING_RATIO);
+
+      camera.animate(renderer.getViewportZoomedState(this.getPosition(nodeCoordinates, container), newRatio), {
+        easing: "quadraticInOut",
+        duration: DOUBLE_CLICK_ZOOMING_DURATION,
+      });
+
+      console.log("lOOKKKDFDFSDFSDFSDF");
+      console.log(renderer);
+
+      const center = {
+        x: renderer.width / 2,
+        y: renderer.height / 2,
+      };
+      console.log(center);
+      console.log(renderer.viewportToFramedGraph(center));
+      // camera.animate(renderer.viewportToFramedGraph(center), {
+      //   easing: "quadraticInOut",
+      //   duration: DOUBLE_CLICK_ZOOMING_DURATION,
+      // });
+    },
     setInfoPanel(id) {
       this.infoPanel = null;
       this.infoPanel = this.map[id];
@@ -100,7 +137,6 @@ export default {
     initializeGraph() {
       const BLUE = "#2081E2";
       this.nodeList.forEach((node) => {
-        console.log(node);
         const theNode = this.map[node.id];
         this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: "https://dummyimage.com/200x200/000/fff", color: BLUE });
       });
@@ -126,13 +162,13 @@ export default {
         },
         renderEdgeLabels: true,
       });
-
-
       renderer.getMouseCaptor().on("mousemovebody", (e) => {
         if (this.drag) {
           this.dragStage(e);
+          console.log(renderer.camera);
         }    
       });
+      console.log(renderer.utils);
       
       renderer.getMouseCaptor().on("mousedown", () => {
         this.drag = true;
@@ -148,7 +184,14 @@ export default {
       renderer.on("clickNode", (node) => {
         const nodeInfo = this.map[node.node];
         this.infoPanel = nodeInfo;
-        console.log(node)
+        console.log("LOOK HERER");
+        console.log(renderer);
+        const mouseCoords = renderer.getMouseCaptor();
+        const nodeCoordinates = {x: mouseCoords.lastMouseX, y: mouseCoords.lastMouseY}
+        
+        console.log('mouseData');
+        console.log(mouseCoords);
+        this.focusNode(renderer, nodeCoordinates, container);
       });
 
       renderer.on("clickStage", (event) => {
@@ -198,6 +241,7 @@ export default {
   text-decoration: none;
   display: inline-block;
   font-size: 16px;
+  border-radius:5px;
 }
 
 body, html, #__nuxt, #__layout {
