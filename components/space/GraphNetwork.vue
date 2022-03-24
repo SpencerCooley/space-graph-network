@@ -41,6 +41,7 @@ export default {
       tree: {}, 
       map: {},
       graph: new Graph(),
+      renderer: null, 
       drag: false,
       infoPanel: null,
     }
@@ -72,46 +73,60 @@ export default {
   watch: {
     edgeList(data) {
       this.initializeGraph();
+    },
+    infoPanel(data) {
+      if (data) {
+        console.log('The info panel has changed');
+        console.log(data);
+        console.log(this.graph.nodes());
+        // const nodeInGraph = this.graph.nodes().find((node) => {
+        //   return node === data.id;
+        // });
+        
+        this.graph.nodes().forEach((node) => {
+          
+          if (node === data.id) {
+            console.log(node);
+            const theNode = this.graph._nodes.get(data.id);
+            console.log(theNode);
+            theNode.attributes.size = 40;
+          } else {
+            this.graph._nodes.get(node).attributes.size = 15;
+          }
+          // this.renderer.refresh();
+        }); 
+      } else {
+        this.graph.nodes().forEach((node) => {
+        this.graph._nodes.get(node).attributes.size = 15;
+      }); 
+      }
+
+      
     }
   },
   methods: {
     getPosition (coords, dom) {
         const bbox = dom.getBoundingClientRect();
-
-        return {
+        console.log(bbox);
+        const position  = {
           x: coords.x - bbox.left,
           y: coords.y - bbox.top,
         };
+
+        console.log(.5 - bbox.left);
+        console.log(.5 - bbox.left);
+        console.log(position);
+        return position;
     },
     focusNode(renderer, nodeCoordinates, container) {
-      // console.log("the passed parameters");
-      // console.log(renderer);
-      // console.log(nodeCoordinates);
-      // console.log(container);
-      const DOUBLE_CLICK_ZOOMING_RATIO = .2;
-      const DOUBLE_CLICK_ZOOMING_DURATION = 200;
-      // default behavior
       const camera = renderer.getCamera();
-      const newRatio = camera.getBoundedRatio(DOUBLE_CLICK_ZOOMING_RATIO);
-
+      const newRatio = camera.getBoundedRatio(.2);
       camera.animate(renderer.getViewportZoomedState(this.getPosition(nodeCoordinates, container), newRatio), {
         easing: "quadraticInOut",
-        duration: DOUBLE_CLICK_ZOOMING_DURATION,
+        duration: 200,
       });
-
-      // console.log("lOOKKKDFDFSDFSDFSDF");
-      // console.log(renderer);
-
-      // const center = {
-      //   x: renderer.width / 2,
-      //   y: renderer.height / 2,
-      // };
-      // console.log(center);
-      // console.log(renderer.viewportToFramedGraph(center));
-      // camera.animate(renderer.viewportToFramedGraph(center), {
-      //   easing: "quadraticInOut",
-      //   duration: DOUBLE_CLICK_ZOOMING_DURATION,
-      // });
+      console.log('the camera data');
+      console.log(camera);
     },
     setInfoPanel(id) {
       this.infoPanel = null;
@@ -140,12 +155,9 @@ export default {
         const theNode = this.map[node.id];
         this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: "https://dummyimage.com/200x200/000/fff", color: BLUE });
       });
-
       this.edgeList.forEach((edge) => {
-        this.graph.addEdge(edge.from, edge.to, { type: "line", label: "", size: 5 });
+        this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 5 });
       });
-      
-      
       //set position of nodes. 
       this.graph.nodes().forEach((node, i) => {
         const angle = (i * 2 * Math.PI) / this.graph.order;
@@ -162,6 +174,8 @@ export default {
         },
         renderEdgeLabels: true,
       });
+      this.renderer = renderer;
+      
       renderer.getMouseCaptor().on("mousemovebody", (e) => {
         if (this.drag) {
           this.dragStage(e);
@@ -184,13 +198,7 @@ export default {
       renderer.on("clickNode", (node) => {
         const nodeInfo = this.map[node.node];
         this.infoPanel = nodeInfo;
-        console.log("LOOK HERER");
-        console.log(renderer);
-        const mouseCoords = renderer.getMouseCaptor();
-        const nodeCoordinates = {x: mouseCoords.lastMouseX, y: mouseCoords.lastMouseY}
-        
-        console.log('mouseData');
-        console.log(mouseCoords);
+        const nodeCoordinates = {x: node.event.x, y: node.event.y}
         this.focusNode(renderer, nodeCoordinates, container);
       });
 
