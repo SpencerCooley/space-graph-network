@@ -84,10 +84,10 @@ export default {
         };
     },
     focusNode(renderer, nodeCoordinates, container) {
-      console.log("the passed parameters");
-      console.log(renderer);
-      console.log(nodeCoordinates);
-      console.log(container);
+      // console.log("the passed parameters");
+      // console.log(renderer);
+      // console.log(nodeCoordinates);
+      // console.log(container);
       const DOUBLE_CLICK_ZOOMING_RATIO = .2;
       const DOUBLE_CLICK_ZOOMING_DURATION = 200;
       // default behavior
@@ -99,15 +99,15 @@ export default {
         duration: DOUBLE_CLICK_ZOOMING_DURATION,
       });
 
-      console.log("lOOKKKDFDFSDFSDFSDF");
-      console.log(renderer);
+      // console.log("lOOKKKDFDFSDFSDFSDF");
+      // console.log(renderer);
 
-      const center = {
-        x: renderer.width / 2,
-        y: renderer.height / 2,
-      };
-      console.log(center);
-      console.log(renderer.viewportToFramedGraph(center));
+      // const center = {
+      //   x: renderer.width / 2,
+      //   y: renderer.height / 2,
+      // };
+      // console.log(center);
+      // console.log(renderer.viewportToFramedGraph(center));
       // camera.animate(renderer.viewportToFramedGraph(center), {
       //   easing: "quadraticInOut",
       //   duration: DOUBLE_CLICK_ZOOMING_DURATION,
