@@ -28,7 +28,7 @@
 import Graph from "graphology";
 import Sigma from "sigma";
 
-import getNodeProgramImage from "sigma/rendering/webgl/programs/node.image";
+import getNodeProgramImage from "sigma/rendering/webgl/programs/node.image"; // maybe edit this. 
 import NodeProgramBorder from "./node.border";
 
 import ForceSupervisor from "graphology-layout-force/worker";
@@ -84,14 +84,14 @@ export default {
         // });
         
         this.graph.nodes().forEach((node) => {
-          
+
           if (node === data.id) {
             console.log(node);
             const theNode = this.graph._nodes.get(data.id);
             console.log(theNode);
-            theNode.attributes.size = 40;
+            theNode.attributes.size = 50;
           } else {
-            this.graph._nodes.get(node).attributes.size = 15;
+            this.graph._nodes.get(node).attributes.size = 10;
           }
           // this.renderer.refresh();
         }); 
@@ -105,6 +105,10 @@ export default {
     }
   },
   methods: {
+    // temporary throw away function for testing with small images. 
+    getRandomInt(max) {
+      return Math.floor(Math.random() * max);
+    },
     getPosition (coords, dom) {
         const bbox = dom.getBoundingClientRect();
         console.log(bbox);
@@ -112,7 +116,6 @@ export default {
           x: coords.x - bbox.left,
           y: coords.y - bbox.top,
         };
-
         console.log(.5 - bbox.left);
         console.log(.5 - bbox.left);
         console.log(position);
@@ -120,7 +123,7 @@ export default {
     },
     focusNode(renderer, nodeCoordinates, container) {
       const camera = renderer.getCamera();
-      const newRatio = camera.getBoundedRatio(.2);
+      const newRatio = camera.getBoundedRatio(.4);
       camera.animate(renderer.getViewportZoomedState(this.getPosition(nodeCoordinates, container), newRatio), {
         easing: "quadraticInOut",
         duration: 200,
@@ -150,10 +153,19 @@ export default {
       return this.map
     },
     initializeGraph() {
+      const temporarySampleImages = [
+        "https://storage.googleapis.com/img-gorillaisms/6809a593.jpeg",
+        "https://storage.googleapis.com/img-gorillaisms/5c9b3a3b.jpeg",
+        "https://storage.googleapis.com/img-gorillaisms/536a14c7.jpeg",
+        "https://storage.googleapis.com/img-gorillaisms/41ab7f5b.jpeg",
+        "https://storage.googleapis.com/img-gorillaisms/96e828f5.jpeg",
+        "https://dummyimage.com/400/000/fff",
+
+      ]
       const BLUE = "#2081E2";
       this.nodeList.forEach((node) => {
         const theNode = this.map[node.id];
-        this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: "https://dummyimage.com/200x200/000/fff", color: BLUE });
+        this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: temporarySampleImages[this.getRandomInt(temporarySampleImages.length-1)] , color: BLUE });
       });
       this.edgeList.forEach((edge) => {
         this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 5 });
@@ -172,7 +184,7 @@ export default {
           image: getNodeProgramImage(),
           border: NodeProgramBorder,
         },
-        renderEdgeLabels: true,
+        
       });
       this.renderer = renderer;
       
@@ -189,6 +201,13 @@ export default {
         console.log('hello world from mouseDown')
         
       });
+      // Bind graph interactions:
+      renderer.on("enterNode", ({ node }) => {
+        console.log('do nothing');
+      });
+      renderer.on("leaveNode", () => {
+        console.log('still do nothing. ');
+      });
 
       renderer.getMouseCaptor().on("mouseup", () => {
         this.drag = false;
@@ -200,6 +219,15 @@ export default {
         this.infoPanel = nodeInfo;
         const nodeCoordinates = {x: node.event.x, y: node.event.y}
         this.focusNode(renderer, nodeCoordinates, container);
+        const drawData = {
+          x: node.event.x,
+          y: node.event.y,
+          clusterLabel: "",
+          tag: "",
+          size:80,
+          label: nodeInfo.title
+        }
+        // this.drawActiveNode(renderer.canvasContexts.labels, drawData);
       });
 
       renderer.on("clickStage", (event) => {
