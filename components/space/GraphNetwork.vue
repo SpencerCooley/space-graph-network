@@ -170,7 +170,7 @@ export default {
         this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: temporarySampleImages[this.getRandomInt(temporarySampleImages.length-1)] , color: BLUE });
       });
       this.edgeList.forEach((edge) => {
-        this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 5 });
+        this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
       });
       //set position of nodes. 
       this.graph.nodes().forEach((node, i) => {
