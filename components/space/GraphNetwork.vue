@@ -12,7 +12,8 @@
         <h1>{{infoPanel.title}} 
             <span class="token-gated">
               <svg v-if="infoPanel.gating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M80 192V144C80 64.47 144.5 0 224 0C303.5 0 368 64.47 368 144V192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H80zM144 192H304V144C304 99.82 268.2 64 224 64C179.8 64 144 99.82 144 144V192z"/></svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M352 192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H288V144C288 64.47 352.5 0 432 0C511.5 0 576 64.47 576 144V192C576 209.7 561.7 224 544 224C526.3 224 512 209.7 512 192V144C512 99.82 476.2 64 432 64C387.8 64 352 99.82 352 144V192z"/></svg>
+              <svg v-else x
+              mlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M352 192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H288V144C288 64.47 352.5 0 432 0C511.5 0 576 64.47 576 144V192C576 209.7 561.7 224 544 224C526.3 224 512 209.7 512 192V144C512 99.82 476.2 64 432 64C387.8 64 352 99.82 352 144V192z"/></svg>
             </span>
           </h1>
          <h2>{{infoPanel.artist}}</h2>
@@ -21,14 +22,10 @@
           <span class="pill" v-for="theme in infoPanel.themes" :key="theme">{{theme}}</span>
         </div>
         <a  class="cta-btn" :href="`https://mona.gallery/spaces/${infoPanel.id}`" target="_blank">Enter Space</a>
-        
       </div>
-      
     </div>
-
     <div style="width:100%;" ref="sigmaContainer" id="sigma-container">
     </div>
-
   </div>
 </template>
 <script>
@@ -88,9 +85,7 @@ export default {
         // const nodeInGraph = this.graph.nodes().find((node) => {
         //   return node === data.id;
         // });
-        
         this.graph.nodes().forEach((node) => {
-
           if (node === data.id) {
             console.log(node);
             const theNode = this.graph._nodes.get(data.id);
@@ -115,27 +110,14 @@ export default {
     getRandomInt(max) {
       return Math.floor(Math.random() * max);
     },
-    getPosition (coords, dom) {
-        const bbox = dom.getBoundingClientRect();
-        console.log(bbox);
-        const position  = {
-          x: coords.x - bbox.left,
-          y: coords.y - bbox.top,
-        };
-        console.log(.5 - bbox.left);
-        console.log(.5 - bbox.left);
-        console.log(position);
-        return position;
-    },
     focusNode(renderer, nodeCoordinates, container) {
       const camera = renderer.getCamera();
-      const newRatio = camera.getBoundedRatio(.5);
-      camera.animate(renderer.getViewportZoomedState(this.getPosition(nodeCoordinates, container), newRatio), {
-        easing: "quadraticInOut",
-        duration: 200,
+      const newRatio = camera.getBoundedRatio(.4);
+
+      const nodePosition = renderer.getNodeDisplayData(this.infoPanel.id);
+      renderer.getCamera().animate({x: nodePosition.x -.1, y: nodePosition.y, ratio: newRatio}, {
+        duration: 500,
       });
-      console.log('the camera data');
-      console.log(camera);
     },
     setInfoPanel(id) {
       this.infoPanel = null;
@@ -226,15 +208,6 @@ export default {
         this.infoPanel = nodeInfo;
         const nodeCoordinates = {x: node.event.x, y: node.event.y}
         this.focusNode(renderer, nodeCoordinates, container);
-        const drawData = {
-          x: node.event.x,
-          y: node.event.y,
-          clusterLabel: "",
-          tag: "",
-          size:80,
-          label: nodeInfo.title
-        }
-        // this.drawActiveNode(renderer.canvasContexts.labels, drawData);
       });
 
       renderer.on("clickStage", (event) => {
