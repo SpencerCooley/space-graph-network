@@ -119,12 +119,20 @@ export default {
       console.log(e);
     },
     async getMap() {
-      // const token = await this.getAuthToken();
-      // console.log("LELLLLELLELLELELELLELELE")
-      // console.log(token);
-      // lets chill on the for now and keep using dummy data.
-      let map = await axios.get('https://us-central1-gorillaisms-264720.cloudfunctions.net/map-spaces');
-      this.map = map.data;
+      try {
+        const token = await this.getAuthToken();
+        const config = {
+          headers: { 
+              'Authorization': `Bearer ${token.data.token}`,
+              'Content-Type': 'application/json' 
+            }
+          }
+        const mapData = await axios.get('https://api.mona.gallery/spaces/FET6LyfYKYgY/map?max=100', config);
+        
+        this.map = mapData.data;
+      } catch(error) {
+        console.log(error);
+      }
       return this.map
     },
     async getAuthToken() {
