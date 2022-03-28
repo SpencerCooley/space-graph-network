@@ -218,7 +218,14 @@ export default {
         console.log(event);
         console.log(event.isDragging);
       });
-      const layout = new ForceSupervisor(this.graph);
+      const layout = new ForceSupervisor(this.graph, {
+        settings: {
+          'gravity': .0008,
+          'repulsion': .5,
+        }
+      });
+      console.log('HLLLLLLLKJ LOOK HERE.');
+      console.log(layout);
       layout.start();
 
     }
