@@ -10,10 +10,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
         </span>
         <h1>{{infoPanel.title}} 
-            <span class="token-gated">
-              <svg v-if="infoPanel.gating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M80 192V144C80 64.47 144.5 0 224 0C303.5 0 368 64.47 368 144V192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H80zM144 192H304V144C304 99.82 268.2 64 224 64C179.8 64 144 99.82 144 144V192z"/></svg>
-              <svg v-else x
-              mlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M352 192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H288V144C288 64.47 352.5 0 432 0C511.5 0 576 64.47 576 144V192C576 209.7 561.7 224 544 224C526.3 224 512 209.7 512 192V144C512 99.82 476.2 64 432 64C387.8 64 352 99.82 352 144V192z"/></svg>
+            <span class="token-gated" v-if="infoPanel.gating">
+              <svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M80 192V144C80 64.47 144.5 0 224 0C303.5 0 368 64.47 368 144V192H384C419.3 192 448 220.7 448 256V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V256C0 220.7 28.65 192 64 192H80zM144 192H304V144C304 99.82 268.2 64 224 64C179.8 64 144 99.82 144 144V192z"/></svg>
             </span>
           </h1>
          <h2>{{infoPanel.artist}}</h2>
@@ -79,17 +77,9 @@ export default {
     },
     infoPanel(data) {
       if (data) {
-        console.log('The info panel has changed');
-        console.log(data);
-        console.log(this.graph.nodes());
-        // const nodeInGraph = this.graph.nodes().find((node) => {
-        //   return node === data.id;
-        // });
         this.graph.nodes().forEach((node) => {
           if (node === data.id) {
-            console.log(node);
             const theNode = this.graph._nodes.get(data.id);
-            console.log(theNode);
             theNode.attributes.size = 50;
           } else {
             this.graph._nodes.get(node).attributes.size = 15;
@@ -97,12 +87,11 @@ export default {
           // this.renderer.refresh();
         }); 
       } else {
+        // if there is no selected node then do this.
         this.graph.nodes().forEach((node) => {
         this.graph._nodes.get(node).attributes.size = 15;
       }); 
       }
-
-      
     }
   },
   methods: {
@@ -113,7 +102,6 @@ export default {
     focusNode(renderer, nodeCoordinates, container) {
       const camera = renderer.getCamera();
       const newRatio = camera.getBoundedRatio(.4);
-
       const nodePosition = renderer.getNodeDisplayData(this.infoPanel.id);
       renderer.getCamera().animate({x: nodePosition.x -.1, y: nodePosition.y, ratio: newRatio}, {
         duration: 500,
@@ -130,15 +118,22 @@ export default {
       console.log('We Dragging the stage!!!!');
       console.log(e);
     },
-    async getTree() {
-      let tree = await axios.get('https://us-central1-gorillaisms-264720.cloudfunctions.net/sample-graph-data-query');
-      this.tree = tree.data;
-      return this.tree;
-    },
     async getMap() {
+      // const token = await this.getAuthToken();
+      // console.log("LELLLLELLELLELELELLELELE")
+      // console.log(token);
+      // lets chill on the for now and keep using dummy data.
       let map = await axios.get('https://us-central1-gorillaisms-264720.cloudfunctions.net/map-spaces');
       this.map = map.data;
       return this.map
+    },
+    async getAuthToken() {
+      const config = {
+          headers: { 'Content-Type': 'application/json' }
+      };
+      const body = { "clientId": "728iwRLx0TFp", "clientSecret": "NTMTDGFRZBmPrjUf" };
+      let tokenResponse= await axios.post('https://api.mona.gallery/oauth', body, config);
+      return tokenResponse;
     },
     initializeGraph() {
       const temporarySampleImages = [
@@ -158,7 +153,7 @@ export default {
       this.edgeList.forEach((edge) => {
         this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
       });
-      //set position of nodes. 
+
       this.graph.nodes().forEach((node, i) => {
         const angle = (i * 2 * Math.PI) / this.graph.order;
         this.graph.setNodeAttribute(node, "x", 100 * Math.cos(angle));
@@ -167,7 +162,7 @@ export default {
       
       const container = this.$refs.sigmaContainer;
       const renderer = new Sigma(this.graph, container, {
-        // We don't have to declare edgeProgramClasses here, because we only use the default ones ("line" and "arrow")
+
         nodeProgramClasses: {
           image: getNodeProgramImage(),
           border: NodeProgramBorder,
@@ -222,7 +217,6 @@ export default {
   async mounted(){
     // get the data and set it 
     try {
-      await this.getTree();
       await this.getMap();
       // this.initializeGraph();
     } catch(error) {
@@ -291,6 +285,12 @@ body, html, #__nuxt, #__layout {
     background-repeat: no-repeat;
   }
   .content-body {
+    h1 {
+      margin-bottom:5px;
+    }
+    h2 {
+      margin-top:10px;
+    }
     position:relative;
     padding:30px;
     .token-gated{ 
