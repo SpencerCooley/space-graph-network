@@ -177,6 +177,7 @@ export default {
         },
         minCameraRatio: 0.1,
         maxCameraRatio: 1.5,
+        minArrowSize: 20,
       });
       this.renderer = renderer;
       
@@ -237,7 +238,7 @@ export default {
 .close-panel {
   display:block;
   position:absolute;
-  top:20px;
+  top:10px;
   right:10px;
   cursor: pointer;
   width:20px;
@@ -295,12 +296,15 @@ body, html, #__nuxt, #__layout {
   .content-body {
     h1 {
       margin-bottom:5px;
+      margin-top:0px;
     }
     h2 {
       margin-top:10px;
     }
     position:relative;
-    padding:30px;
+    padding-left:30px;
+    padding-right:35px;
+    padding-top: 20px;
     .token-gated{ 
       svg {
         width:30px;
