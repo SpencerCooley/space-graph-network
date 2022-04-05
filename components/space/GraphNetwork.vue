@@ -37,14 +37,21 @@ import ForceSupervisor from "graphology-layout-force/worker";
 import axios from 'axios';
 
 export default {
+  props: ['initialSpaceId'],
   data() {
     return {
-      tree: {}, 
+      settings: {
+        initialSpaceQueryLimit: 20, // the initial query will do a big query 
+        focusZoom: .4, // zoom level when you click a node and it focuses
+      },
+      authToken: null,
       map: {},
       graph: new Graph(),
       renderer: null, 
       drag: false,
       infoPanel: null,
+      nodesAlreadyQueried: [], // every time we do a query on a node we add it to the list to avoid redundant queries.
+      graphInitialized: false,
     }
   },
   computed: {
@@ -64,7 +71,13 @@ export default {
              from: id,
              to: destination
            }
-           edges.push(edge);
+           // make sure the destination exists as a node in the graph.
+           // since the query could possibly not include all nodes in the map data.
+           // this is needed to prevent the graph from crashing.
+           if(Object.keys(this.map).includes(destination)) {
+             edges.push(edge);
+           }
+           
          });
        }
      });  
@@ -72,8 +85,17 @@ export default {
     }
   },
   watch: {
-    edgeList(data) {
-      this.initializeGraph();
+    nodeList(newNodeData, oldNodeData) {
+      if(this.graphInitialized) {
+        this.updateGraph(newNodeData, oldNodeData);
+      }
+    },
+    edgeList() {
+      if(!this.graphInitialized){
+        // called on initial load
+        this.initializeGraph();
+        this.graphInitialized = true;
+      }
     },
     infoPanel(data) {
       if (data) {
@@ -84,7 +106,6 @@ export default {
           } else {
             this.graph._nodes.get(node).attributes.size = 15;
           }
-          // this.renderer.refresh();
         }); 
       } else {
         // if there is no selected node then do this.
@@ -95,13 +116,9 @@ export default {
     }
   },
   methods: {
-    // temporary throw away function for testing with small images. 
-    getRandomInt(max) {
-      return Math.floor(Math.random() * max);
-    },
     focusNode(renderer, nodeCoordinates, container) {
       const camera = renderer.getCamera();
-      const newRatio = camera.getBoundedRatio(.4);
+      const newRatio = camera.getBoundedRatio(this.settings.focusZoom);
       const nodePosition = renderer.getNodeDisplayData(this.infoPanel.id);
       renderer.getCamera().animate({x: nodePosition.x -.1, y: nodePosition.y, ratio: newRatio}, {
         duration: 500,
@@ -115,10 +132,16 @@ export default {
       this.infoPanel = null;
     },
     dragStage(e) {
+      console.log(this.renderer.quadtree);
       console.log('We Dragging the stage!!!!');
       console.log(e);
     },
-    async getMap() {
+    async queryQuadTreeList(quadtree) {
+      quadtree.forEach(async (spaceId) => {
+         await this.getMapBySpaceId(spaceId, 5);
+      });
+    },
+    async getMapBySpaceId(spaceId, limit) {
       try {
         const token = await this.getAuthToken();
         const config = {
@@ -127,39 +150,72 @@ export default {
               'Content-Type': 'application/json' 
             }
           }
-        const mapData = await axios.get('https://api.mona.gallery/spaces/FET6LyfYKYgY/map?max=100', config);
-        
-        this.map = mapData.data;
+        if(!this.nodesAlreadyQueried.includes(spaceId)) {
+          const mapData = await axios.get(`https://api.mona.gallery/spaces/${spaceId}/map?max=${limit}`, config);
+          this.nodesAlreadyQueried.push(spaceId);
+          const currentMap = this.map;
+          // merge the data from the query with the data already in the map. 
+          this.map = {...mapData.data, ...currentMap};
+        }
       } catch(error) {
         console.log(error);
       }
       return this.map
     },
     async getAuthToken() {
-      const config = {
-          headers: { 'Content-Type': 'application/json' }
-      };
-      const body = { "clientId": "728iwRLx0TFp", "clientSecret": "NTMTDGFRZBmPrjUf" };
-      let tokenResponse= await axios.post('https://api.mona.gallery/oauth', body, config);
-      return tokenResponse;
+      // only make a request if the auth token is not yet saved to the state.
+      if (!this.authToken) {
+        try {
+          const config = {
+              headers: { 'Content-Type': 'application/json' }
+          };
+          const body = { "clientId": "728iwRLx0TFp", "clientSecret": "NTMTDGFRZBmPrjUf" };
+          let tokenResponse= await axios.post('https://api.mona.gallery/oauth', body, config);
+          this.authToken = tokenResponse;
+          return tokenResponse;
+        } catch(error) {
+          console.log(error);
+        }
+      }
+      return this.authToken;
+    },
+    updateGraph(newNodeData, oldNodeData) {
+      // get the difference between the old node data and the new node data so you have a list of new nodes.
+      let newNodes = newNodeData.filter(x => !oldNodeData.includes(x)).map(x => x.id);
+      console.log(newNodes);
+      
+      
+      const BLUE = "#2081E2";
+      newNodes.forEach((node) => {
+        const theNode = this.map[node];
+        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: BLUE });
+      });
+      this.edgeList.forEach((edge) => {
+        this.graph.mergeEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
+      });
+
+      
+      this.graph.nodes().forEach((node, i) => {
+        if(newNodes.includes(node)) {
+          console.log('LOOOOK HERERERERERE');
+          console.log(node);
+          const angle = (i * 2 * Math.PI) / this.graph.order;
+          this.graph.setNodeAttribute(node, "x", 100 * Math.cos(angle));
+          this.graph.setNodeAttribute(node, "y", 100 * Math.sin(angle));  
+        }
+      });
+      // we need to get the list of new nodes. And position them in the same circular way. 
+      // we only want to position new nodes. 
+      console.log("update that.");
     },
     initializeGraph() {
-      const temporarySampleImages = [
-        "https://storage.googleapis.com/img-gorillaisms/6809a593.jpeg",
-        "https://storage.googleapis.com/img-gorillaisms/5c9b3a3b.jpeg",
-        "https://storage.googleapis.com/img-gorillaisms/536a14c7.jpeg",
-        "https://storage.googleapis.com/img-gorillaisms/41ab7f5b.jpeg",
-        "https://storage.googleapis.com/img-gorillaisms/96e828f5.jpeg",
-        "https://dummyimage.com/400/000/fff",
-
-      ]
       const BLUE = "#2081E2";
       this.nodeList.forEach((node) => {
         const theNode = this.map[node.id];
-        this.graph.addNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: temporarySampleImages[this.getRandomInt(temporarySampleImages.length-1)] , color: BLUE });
+        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: BLUE });
       });
       this.edgeList.forEach((edge) => {
-        this.graph.addEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
+        this.graph.mergeEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
       });
 
       this.graph.nodes().forEach((node, i) => {
@@ -185,7 +241,7 @@ export default {
         if (this.drag) {
           this.dragStage(e);
           console.log(renderer.camera);
-        }    
+        }
       });
       console.log(renderer.utils);
       
@@ -205,13 +261,16 @@ export default {
       renderer.getMouseCaptor().on("mouseup", () => {
         this.drag = false;
         console.log('hello world from mouseUp')
+        console.log(this.renderer.quadtree);
+        console.log('this is wehre you should be looking.');
+        const quadTree = this.renderer.quadtree.cache;
+        this.queryQuadTreeList(quadTree);
       });
 
       renderer.on("clickNode", (node) => {
         const nodeInfo = this.map[node.node];
         this.infoPanel = nodeInfo;
-        const nodeCoordinates = {x: node.event.x, y: node.event.y}
-        this.focusNode(renderer, nodeCoordinates, container);
+        this.focusNode(renderer);
       });
 
       renderer.on("clickStage", (event) => {
@@ -233,8 +292,19 @@ export default {
   async mounted(){
     // get the data and set it 
     try {
-      await this.getMap();
-      // this.initializeGraph();
+      // only initialize if there is an id passed to the component. 
+      if(this.initialSpaceId) {
+        await this.getMapBySpaceId(this.initialSpaceId, this.settings.initialSpaceQueryLimit);
+        // set the infoPanel.    
+        // give the nodes a little time to settle in their position. 
+        // if you do this instantly then the node is not centered because it is still moving around after the center event. 
+        setTimeout(() => {
+          this.infoPanel = this.map[this.initialSpaceId];
+          console.log('look HERE');
+          console.log(this.renderer);
+          this.focusNode(this.renderer);
+        }, 2000);
+      } 
     } catch(error) {
       console.log(error);
     }
