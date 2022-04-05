@@ -188,6 +188,7 @@ export default {
 
       newNodes.forEach((node) => {
         const theNode = this.map[node];
+        // thumbnail images should be placed here
         this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: this.settings.nodeColor });
       });
       this.edgeList.forEach((edge) => {
@@ -205,6 +206,7 @@ export default {
     initializeGraph() {
       this.nodeList.forEach((node) => {
         const theNode = this.map[node.id];
+        // thumbnail images should be placed here
         this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: this.settings.nodeColor });
       });
       this.edgeList.forEach((edge) => {
