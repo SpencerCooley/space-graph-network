@@ -40,10 +40,15 @@ export default {
   props: ['initialSpaceId'],
   data() {
     return {
+      // considered passing this as props but leaving that open so it is flexible for however you want to use it. 
       settings: {
-        initialSpaceQueryLimit: 20, // the initial query will do a big query 
-        newNodeQueriesLimit: 20,
+        initialSpaceQueryLimit: 20, // the initial query will use this as it's limit parameter in api call
+        newNodeQueriesLimit: 20, // future queries when navigating will use this as it's limit parameter in api call
         focusZoom: .4, // zoom level when you click a node and it focuses
+        nodeColor: "#2081E2", // the color of the nodes.
+        minZoom: 0.1, // minimum zoom level
+        maxZoom: 1.5, // maximum zoom level
+        selectSpaceOnLoad: true // set to true if you want the space to auto select the space on initial load.
       },
       authToken: null,
       map: {},
@@ -132,11 +137,6 @@ export default {
     clearInfoPanel() {
       this.infoPanel = null;
     },
-    dragStage(e) {
-      console.log(this.renderer.quadtree);
-      console.log('We Dragging the stage!!!!');
-      console.log(e);
-    },
     async queryQuadTreeList(quadtree) {
       quadtree.forEach(async (spaceId) => {
          await this.getMapBySpaceId(spaceId, this.settings.newNodeQueriesLimit);
@@ -185,35 +185,27 @@ export default {
       let newNodes = newNodeData.filter(x => !oldNodeData.includes(x)).map(x => x.id);
       console.log(newNodes);
       
-      
-      const BLUE = "#2081E2";
+
       newNodes.forEach((node) => {
         const theNode = this.map[node];
-        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: BLUE });
+        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: this.settings.nodeColor });
       });
       this.edgeList.forEach((edge) => {
         this.graph.mergeEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
       });
 
-      
       this.graph.nodes().forEach((node, i) => {
         if(newNodes.includes(node)) {
-          console.log('LOOOOK HERERERERERE');
-          console.log(node);
           const angle = (i * 2 * Math.PI) / this.graph.order;
           this.graph.setNodeAttribute(node, "x", 100 * Math.cos(angle));
           this.graph.setNodeAttribute(node, "y", 100 * Math.sin(angle));  
         }
       });
-      // we need to get the list of new nodes. And position them in the same circular way. 
-      // we only want to position new nodes. 
-      console.log("update that.");
     },
     initializeGraph() {
-      const BLUE = "#2081E2";
       this.nodeList.forEach((node) => {
         const theNode = this.map[node.id];
-        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: BLUE });
+        this.graph.mergeNode(theNode.id, { size: 20, label: theNode.title, type: "image", image: 'https://dummyimage.com/400/000/fff' , color: this.settings.nodeColor });
       });
       this.edgeList.forEach((edge) => {
         this.graph.mergeEdge(edge.from, edge.to, { type: "arrow", label: "", size: 3 });
@@ -232,40 +224,17 @@ export default {
           image: getNodeProgramImage(),
           border: NodeProgramBorder,
         },
-        minCameraRatio: 0.1,
-        maxCameraRatio: 1.5,
-        minArrowSize: 20,
+        minCameraRatio: this.settings.minZoom,
+        maxCameraRatio: this.settings.maxZoom
       });
       this.renderer = renderer;
       
-      renderer.getMouseCaptor().on("mousemovebody", (e) => {
-        if (this.drag) {
-          this.dragStage(e);
-          console.log(renderer.camera);
-        }
-      });
-      console.log(renderer.utils);
-      
-      renderer.getMouseCaptor().on("mousedown", () => {
-        this.drag = true;
-        console.log('hello world from mouseDown')
-        
-      });
-      // Bind graph interactions:
-      renderer.on("enterNode", ({ node }) => {
-        console.log('do nothing');
-      });
-      renderer.on("leaveNode", () => {
-        console.log('still do nothing. ');
-      });
-
+      // this will trigger the api calls on the visible nodes 
+      // any time the mouseup even happens. 
       renderer.getMouseCaptor().on("mouseup", () => {
         this.drag = false;
-        console.log('hello world from mouseUp')
-        console.log(this.renderer.quadtree);
-        console.log('this is wehre you should be looking.');
         const quadTree = this.renderer.quadtree.cache;
-        this.queryQuadTreeList(quadTree);
+        this.queryQuadTreeList(quadTree); // does api calls to get more spaces on navigation.
       });
 
       renderer.on("clickNode", (node) => {
@@ -274,20 +243,13 @@ export default {
         this.focusNode(renderer);
       });
 
-      renderer.on("clickStage", (event) => {
-        console.log(event);
-        console.log(event.isDragging);
-      });
       const layout = new ForceSupervisor(this.graph, {
         settings: {
           'gravity': .0008,
           'repulsion': .5,
         }
       });
-      console.log('HLLLLLLLKJ LOOK HERE.');
-      console.log(layout);
       layout.start();
-
     }
   },
   async mounted(){
@@ -299,12 +261,12 @@ export default {
         // set the infoPanel.    
         // give the nodes a little time to settle in their position. 
         // if you do this instantly then the node is not centered because it is still moving around after the center event. 
-        setTimeout(() => {
-          this.infoPanel = this.map[this.initialSpaceId];
-          console.log('look HERE');
-          console.log(this.renderer);
-          this.focusNode(this.renderer);
-        }, 1500);
+        if(this.settings.selectSpaceOnLoad) {
+          setTimeout(() => {
+            this.infoPanel = this.map[this.initialSpaceId];
+            this.focusNode(this.renderer);
+          }, 1500);
+        }
       } 
     } catch(error) {
       console.log(error);
