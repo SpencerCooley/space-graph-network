@@ -42,6 +42,7 @@ export default {
     return {
       settings: {
         initialSpaceQueryLimit: 20, // the initial query will do a big query 
+        newNodeQueriesLimit: 20,
         focusZoom: .4, // zoom level when you click a node and it focuses
       },
       authToken: null,
@@ -138,7 +139,7 @@ export default {
     },
     async queryQuadTreeList(quadtree) {
       quadtree.forEach(async (spaceId) => {
-         await this.getMapBySpaceId(spaceId, 5);
+         await this.getMapBySpaceId(spaceId, this.settings.newNodeQueriesLimit);
       });
     },
     async getMapBySpaceId(spaceId, limit) {
@@ -303,7 +304,7 @@ export default {
           console.log('look HERE');
           console.log(this.renderer);
           this.focusNode(this.renderer);
-        }, 2000);
+        }, 1500);
       } 
     } catch(error) {
       console.log(error);
